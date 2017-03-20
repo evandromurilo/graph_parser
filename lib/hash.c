@@ -132,6 +132,15 @@ int hash_remove(struct Hashtable *table, char *key) {
 	}
 
 	free(curr->key);
+
+	struct GNode *node = curr->value;
+	free(node->name);
+	while (node->connections != NULL) {
+		struct StringNode *temp = node->connections;
+		node->connections = node->connections->next;
+		free(temp);
+	}
+		
 	free(curr);
 	--(table->stored);
 

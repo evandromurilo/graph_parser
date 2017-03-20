@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "m_basics.h"
-#include "structures.h"
+#include "../structures.h"
 
 #ifndef DEBUG
 #define DEBUG 0

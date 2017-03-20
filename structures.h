@@ -1,8 +1,8 @@
 struct GNode {
 	char *name;
 	bool checked;
-	int size;
-	char **connections;
+	int layer;
+	struct StringNode *connections;
 };
 
 struct Hashtable {
@@ -27,3 +27,7 @@ struct Queue {
 	struct QNode *last;
 };
 
+struct StringNode {
+	char *str;
+	struct StringNode *next;
+};
