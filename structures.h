@@ -1,5 +1,6 @@
 struct GNode {
 	char *name;
+	char *parent_name;
 	bool checked;
 	int layer;
 	struct StringNode *connections;

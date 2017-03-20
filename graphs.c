@@ -6,7 +6,7 @@
 
 struct GNode *init_GNode(char *name);
 void connect(struct GNode *node, char *str);
-int search(struct Hashtable *hash, char *start, char *goal);
+struct Node *search(struct Hashtable *hash, char *start, char *goal);
 struct GNode *dequeue(struct Queue *q);
 void enqueue(struct Queue *q, struct GNode *node);
 
@@ -14,59 +14,56 @@ int main(void) {
 	struct Hashtable hash;
 	hash_init(&hash);
 
-	struct GNode n1;
-	n1.name = concat("murilo","");
-	n1.checked = false;
-	n1.connections = NULL;
-	connect(&n1, "iana");
-	connect(&n1, "beatriz");
-	connect(&n1, "oxito");
+	struct GNode *murilo = init_GNode("murilo");
+	connect(murilo, "iana");
+	connect(murilo, "beatriz");
+	connect(murilo, "oxito");
 
-	struct GNode n2;
-	n2.name = concat("iana","");
-	n2.checked = false;
-	n2.connections = NULL;
-	connect(&n2, "murilo");
-	connect(&n2, "josi");
+	struct GNode *iana = init_GNode("iana");
+	connect(iana, "murilo");
+	connect(iana, "alan");
+	connect(iana, "josi");
 
-	struct GNode n3;
-	n3.name = concat("beatriz","");
-	n3.connections = NULL;
-	n3.checked = false;
+	struct GNode *alan = init_GNode("alan");
+	connect(alan, "edgar");
 
-	struct GNode n4;
-	n4.name = concat("josi","");
-	n4.checked = false;
-	n4.connections = NULL;
-	connect(&n4, "beatriz");
+	struct GNode *edgar = init_GNode("edgar");
+	struct GNode *beatriz = init_GNode("beatriz");
+	struct GNode *josi = init_GNode("josi");
 
-	struct GNode n5;
-	n5.name = concat("oxito","");
-	n5.checked = false;
-	n5.connections = NULL;
-	connect(&n5, "victor");
-	connect(&n5, "mariana");
+	struct GNode *oxito = init_GNode("oxito");
+	connect(oxito, "mariana");
+	connect(oxito, "victor");
 
-	struct GNode *n6 = init_GNode("victor");
-	connect(n6, "igor");
-	connect(n6, "valdeir");
+	struct GNode *mariana = init_GNode("mariana");
 
-	struct GNode *n7 = init_GNode("mariana");
-	struct GNode *n8 = init_GNode("valdeir");
-	struct GNode *n9 = init_GNode("igor");
+	struct GNode *victor = init_GNode("victor");
+	connect(victor, "valdeir");
+	connect(victor, "igor");
+	connect(victor, "alan");
 
-	hash_add(&hash, "murilo", &n1);
-	hash_add(&hash, "iana", &n2);
-	hash_add(&hash, "beatriz", &n3);
-	hash_add(&hash, "josi", &n4);
-	hash_add(&hash, "oxito", &n5);
-	hash_add(&hash, "victor", n6);
-	hash_add(&hash, "mariana", n7);
-	hash_add(&hash, "valdeir", n8);
-	hash_add(&hash, "igor", n9);
+	struct GNode *valdeir = init_GNode("valdeir");
+	struct GNode *igor = init_GNode("igor");
 
-	/* printf("%s\n", hash_getv(&hash, "murilo")->connections->str); */
-	printf("%d\n", search(&hash, "murilo", "josi"));
+	hash_add(&hash, "murilo", murilo);
+	hash_add(&hash, "iana", iana);
+	hash_add(&hash, "beatriz", beatriz);
+	hash_add(&hash, "josi", josi);
+	hash_add(&hash, "oxito", oxito);
+	hash_add(&hash, "victor", victor);
+	hash_add(&hash, "mariana", mariana);
+	hash_add(&hash, "valdeir", valdeir);
+	hash_add(&hash, "igor", igor);
+	hash_add(&hash, "alan", alan);
+	hash_add(&hash, "edgar", edgar);
+
+	struct Node *path = search(&hash, "murilo", "igor");
+
+	while (path != NULL) {
+		printf("%s ", path->key);
+		path = path->next;
+	}
+	putchar('\n');
 
 	return 0;
 }
@@ -100,7 +97,7 @@ struct GNode *dequeue(struct Queue *q) {
 }
 
 
-int search(struct Hashtable *hash, char *start, char *goal) {
+struct Node *search(struct Hashtable *hash, char *start, char *goal) {
 	if (strcmp(start, goal) == 0) return 0;
 
 	int n = 0;
@@ -109,14 +106,33 @@ int search(struct Hashtable *hash, char *start, char *goal) {
 	struct Queue q;
 
 	nstart->checked = true;
+	nstart->parent_name = NULL;
 	q.first = q.last = NULL;
 
 	enqueue(&q, nstart);
 
 	while ((curr = dequeue(&q)) != NULL) {
 		printf("looking at %s\n", curr->name);
-		curr->checked = true;
-		if (strcmp(curr->name, goal) == 0) return curr->layer;
+		if (strcmp(curr->name, goal) == 0) {
+			struct Node *first = malloc(sizeof (struct Node));
+			first->value = curr;
+			first->next = NULL;
+			first->key = curr->name;
+
+			struct Node *new;
+			while (curr->parent_name != NULL) {
+				printf("searching parent %s\n", curr->parent_name);
+				new = hash_getn(hash, curr->parent_name);
+				if (new == NULL) printf("failed to get parent %s\n", curr->parent_name);
+				printf("got parent %s\n", new->key);
+				new->next = first;
+				first = new;
+				curr = new->value;
+			}
+
+
+		       	return first; // todo: change to return a list of the reconstructed path
+		}
 		++n;
 
 		for (struct StringNode *snd = curr->connections; snd != NULL; snd = snd->next) {
@@ -127,6 +143,8 @@ int search(struct Hashtable *hash, char *start, char *goal) {
 			if (!(temp->checked)) {
 				enqueue(&q, temp);
 				temp->layer = curr->layer + 1;
+				temp->parent_name = curr->name;
+				temp->checked = true;
 			}
 		}
 	}
@@ -147,6 +165,7 @@ struct GNode *init_GNode(char *name) {
 	new->checked = false;
 	new->connections = NULL;
 	new->layer = 0;
+	new->parent_name = NULL;
 
 	return new;
 }
