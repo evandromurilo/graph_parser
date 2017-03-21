@@ -138,6 +138,45 @@ int split(char** arr, int size, char* str, char goal) {
 	return total;
 }
 
+int split_linked(struct StringList *list, int size, char* str, char goal) {
+	char word[MAX_WORD_SIZE+1];
+	int i, c, total = 0;
+
+	while (total < size && *str != '\0') {
+		while (*str == goal && *str != '\0') ++str;
+
+		if (*str == '\0') break;
+
+		for (i = 0; i < MAX_WORD_SIZE && *str != goal && *str != '\0'; 
+				++i, ++str) {
+			word[i] = *str;
+		}
+		word[i] = '\0';
+
+		char* nword = malloc(i);
+		strcpy(nword, word);
+
+		append_string(list, nword);
+		++total;
+	}
+
+	return total;
+}
+
+struct StringNode *append_string(struct StringList *list, char* word) {
+	struct StringNode *new = malloc(sizeof(struct StringNode));
+
+	new->str = word;
+	new->next = NULL;
+
+	if (list->first == NULL) list->first = list->last = new;
+	else list->last = list->last->next = new;
+
+	(list->size)++;
+
+	return new;
+}
+
 bool is_prime(int n) {
 	if (n == 2) return true;
 	if (n == 3) return true;

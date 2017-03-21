@@ -9,55 +9,17 @@ void connect(struct GNode *node, char *str);
 struct Node *search(struct Hashtable *hash, char *start, char *goal);
 struct GNode *dequeue(struct Queue *q);
 void enqueue(struct Queue *q, struct GNode *node);
+struct Node *parse_graph(char *filename, struct Hashtable *hash);
 
 int main(void) {
 	struct Hashtable hash;
 	hash_init(&hash);
 
-	struct GNode *murilo = init_GNode("murilo");
-	connect(murilo, "iana");
-	connect(murilo, "beatriz");
-	connect(murilo, "oxito");
-
-	struct GNode *iana = init_GNode("iana");
-	connect(iana, "murilo");
-	connect(iana, "alan");
-	connect(iana, "josi");
-
-	struct GNode *alan = init_GNode("alan");
-	connect(alan, "edgar");
-
-	struct GNode *edgar = init_GNode("edgar");
-	struct GNode *beatriz = init_GNode("beatriz");
-	struct GNode *josi = init_GNode("josi");
-
-	struct GNode *oxito = init_GNode("oxito");
-	connect(oxito, "mariana");
-	connect(oxito, "victor");
-
-	struct GNode *mariana = init_GNode("mariana");
-
-	struct GNode *victor = init_GNode("victor");
-	connect(victor, "valdeir");
-	connect(victor, "igor");
-	connect(victor, "alan");
-
-	struct GNode *valdeir = init_GNode("valdeir");
-	struct GNode *igor = init_GNode("igor");
-
-	hash_add(&hash, "murilo", murilo);
-	hash_add(&hash, "iana", iana);
-	hash_add(&hash, "beatriz", beatriz);
-	hash_add(&hash, "josi", josi);
-	hash_add(&hash, "oxito", oxito);
-	hash_add(&hash, "victor", victor);
-	hash_add(&hash, "mariana", mariana);
-	hash_add(&hash, "valdeir", valdeir);
-	hash_add(&hash, "igor", igor);
-	hash_add(&hash, "alan", alan);
-	hash_add(&hash, "edgar", edgar);
-
-	struct Node *path = search(&hash, "murilo", "igor");
+	parse_graph("test2.txt", &hash);
+	printf("End of parse\n");
+	/* struct Node *path = search(&hash, "murilo", "josi"); */
+	struct Node *path = search(&hash, "a", "h");
+	printf("End of search\n");
 
 	while (path != NULL) {
 		printf("%s ", path->key);
@@ -66,6 +28,44 @@ int main(void) {
 	putchar('\n');
 
 	return 0;
+}
+
+struct Node *parse_graph(char *filename, struct Hashtable *hash) {
+	FILE *file = fopen(filename, "r");
+	char line[100];
+	struct Node *graph = NULL;
+
+	while (fgets(line, 100, file) != NULL) {
+		struct StringList words;
+		words.first = words.last = NULL;
+		words.size = 0;
+
+		split_linked(&words, 100, line, ' ');
+
+		struct StringNode *curr = words.first;
+		printf("creating GNode %s\n", curr->str);
+		struct GNode *newG = init_GNode(curr->str);
+		while ((curr = curr->next) != NULL && curr->str[0] != '\n') {
+			connect(newG, curr->str);
+		}
+
+		struct Node *newN = malloc(sizeof (struct Node));
+		newN->value = newG;
+		newN->next = graph;
+		newN->key = newG->name;
+		graph = newN;
+	}
+
+	struct Node *curr = graph;
+	while (curr != NULL) {
+		printf("adding %s to hash\n", curr->key);
+		hash_add(hash, curr->key, curr->value);
+		curr = curr->next;
+	}
+
+	fclose(file);
+
+	return graph;
 }
 
 void enqueue(struct Queue *q, struct GNode *node) {
@@ -77,7 +77,6 @@ void enqueue(struct Queue *q, struct GNode *node) {
 	else {
 		q->last->next = new;
 		q->last = new;
-		/* q->last = q->last->next = new; */
 	}
 
 	printf("enqueued %s\n", node->name);
@@ -98,6 +97,7 @@ struct GNode *dequeue(struct Queue *q) {
 
 
 struct Node *search(struct Hashtable *hash, char *start, char *goal) {
+	printf("Search start\n");
 	if (strcmp(start, goal) == 0) return 0;
 
 	int n = 0;
@@ -105,9 +105,11 @@ struct Node *search(struct Hashtable *hash, char *start, char *goal) {
 	struct GNode *curr;
 	struct Queue q;
 
+	printf("1\n");
 	nstart->checked = true;
 	nstart->parent_name = NULL;
 	q.first = q.last = NULL;
+	printf("2\n");
 
 	enqueue(&q, nstart);
 
@@ -131,7 +133,7 @@ struct Node *search(struct Hashtable *hash, char *start, char *goal) {
 			}
 
 
-		       	return first; // todo: change to return a list of the reconstructed path
+		       	return first; 
 		}
 		++n;
 
@@ -149,7 +151,7 @@ struct Node *search(struct Hashtable *hash, char *start, char *goal) {
 		}
 	}
 
-	return -1;
+	return NULL;
 }
 
 void connect(struct GNode *node, char *str) {
@@ -169,4 +171,3 @@ struct GNode *init_GNode(char *name) {
 
 	return new;
 }
-

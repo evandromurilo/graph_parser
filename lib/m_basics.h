@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "../structures.h"
 
 // len: returns the length of the string 's'
 int len(char *s);
@@ -56,6 +57,9 @@ int read_until(int goal, char* str, int size);
 // returns the resulting amount of strings
 int split(char** arr, int size, char* str, char goal);
 
+int split_linked(struct StringList *list, int size, char* str, char goal);
+struct StringNode *append_string(struct StringList *list, char* word);
+	
 // is_prime: returns true if n is prime
 bool is_prime(int n);
 

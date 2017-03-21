@@ -1,9 +1,23 @@
+#ifndef STRUCTURES_H
+#define STRUCTURES_H
+
 struct GNode {
 	char *name;
 	char *parent_name;
 	bool checked;
 	int layer;
 	struct StringNode *connections;
+};
+
+struct StringNode {
+	char *str;
+	struct StringNode *next;
+};
+
+struct StringList {
+	int size;
+	struct StringNode *first;
+	struct StringNode *last;
 };
 
 struct Hashtable {
@@ -28,7 +42,4 @@ struct Queue {
 	struct QNode *last;
 };
 
-struct StringNode {
-	char *str;
-	struct StringNode *next;
-};
+#endif
