@@ -4,10 +4,11 @@
 // a graph node
 struct GNode {
 	char *name;
+	struct StringNode *connections;
+	// variables from here on are used only during searches
 	char *parent_name;
 	bool checked;
 	int layer;
-	struct StringNode *connections;
 };
 
 struct StringNode {

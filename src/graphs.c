@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "lib/m_basics.h"
+#include "../lib/m_basics.h"
 #include "graphs.h"
 
 int main(int argc, char **argv) {

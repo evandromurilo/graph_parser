@@ -1,0 +1,7 @@
+GRAPH PARSER
+
+Author: Evandro Murilo
+
+Description: Parses a graph configuration file (see 'src/test.txt' for an example),
+after that you can submit queries for finding the shortest path between two nodes (using
+breadth-first search).

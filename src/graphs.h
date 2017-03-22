@@ -1,7 +1,7 @@
 #ifndef GRAPHS_H
 #define GRAPHS_H
 
-#include "lib/hash.h"
+#include "../lib/hash.h"
 #include "structures.h"
 
 // used in the parse_graph function

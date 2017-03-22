@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "../structures.h"
+#include "../src/structures.h"
 
 // len: returns the length of the string 's'
 int len(char *s);
