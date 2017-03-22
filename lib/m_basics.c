@@ -102,6 +102,15 @@ int discard_while(char *goals) {
 	return n;
 }
 
+bool is_in(char c, char *goals) {
+	while (*goals != '\0') {
+		if (*goals == c) {
+			return true;
+		}
+		goals++;
+	}
+}
+
 int read_until(int goal, char* str, int size) {
 	int c, i;
 
@@ -138,16 +147,16 @@ int split(char** arr, int size, char* str, char goal) {
 	return total;
 }
 
-int split_linked(struct StringList *list, int size, char* str, char goal) {
+int split_linked(struct StringList *list, char* str, char *goal) {
 	char word[MAX_WORD_SIZE+1];
 	int i, c, total = 0;
 
-	while (total < size && *str != '\0') {
-		while (*str == goal && *str != '\0') ++str;
+	while (*str != '\0') {
+		while (is_in(*str, goal) && *str != '\0') ++str;
 
 		if (*str == '\0') break;
 
-		for (i = 0; i < MAX_WORD_SIZE && *str != goal && *str != '\0'; 
+		for (i = 0; i < MAX_WORD_SIZE && !(is_in(*str, goal)) && *str != '\0'; 
 				++i, ++str) {
 			word[i] = *str;
 		}

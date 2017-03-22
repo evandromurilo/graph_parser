@@ -1,6 +1,7 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
+// a graph node
 struct GNode {
 	char *name;
 	char *parent_name;

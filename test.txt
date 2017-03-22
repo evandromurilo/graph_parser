@@ -1,11 +1,12 @@
-murilo iana oxito beatriz 
-iana  murilo josi alan 
-alan edgar 
-edgar 
-beatriz 
-josi 
-oxito mariana victor 
-mariana 
-victor valdeir igor alan 
-valdeir 
-igor 
+murilo	iana oxito beatriz
+
+iana	murilo josi alan
+alan	edgar
+edgar
+beatriz
+josi
+oxito	mariana victor
+mariana
+victor	valdeir igor alan
+valdeir
+igor

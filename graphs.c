@@ -1,71 +1,87 @@
+#include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <string.h>
-#include "lib/hash.h"
 #include "lib/m_basics.h"
+#include "graphs.h"
 
-struct GNode *init_GNode(char *name);
-void connect(struct GNode *node, char *str);
-struct Node *search(struct Hashtable *hash, char *start, char *goal);
-struct GNode *dequeue(struct Queue *q);
-void enqueue(struct Queue *q, struct GNode *node);
-struct Node *parse_graph(char *filename, struct Hashtable *hash);
+int main(int argc, char **argv) {
+	if (argc == 1) {
+		printf("Use: ./graphs 'graphfile.txt'.\n");
+		return 1;
+	}
 
-int main(void) {
+	FILE *file = fopen(argv[1], "r");
+	if (file == NULL) {
+		printf("File '%s' not found.\n", argv[1]);
+		return 1;
+	}
+
 	struct Hashtable hash;
 	hash_init(&hash);
 
-	parse_graph("test2.txt", &hash);
-	printf("End of parse\n");
-	/* struct Node *path = search(&hash, "murilo", "josi"); */
-	struct Node *path = search(&hash, "a", "h");
-	printf("End of search\n");
+	struct Node *graph = parse_graph(file, &hash);
 
-	while (path != NULL) {
-		printf("%s ", path->key);
-		path = path->next;
+	printf("Enter queries ('start' 'goal'):\n## ");
+	char start[100];
+	char goal[100];
+	while (scanf("%s %s", &start, &goal) > 0) {
+		struct Node *path = search(&hash, start, goal);
+		reset_graph(graph);
+
+		printf(">> ");
+		while (path != NULL) {
+			printf("%s ", path->key);
+			path = path->next;
+		}
+		printf("\n## ");
 	}
-	putchar('\n');
 
 	return 0;
 }
 
-struct Node *parse_graph(char *filename, struct Hashtable *hash) {
-	FILE *file = fopen(filename, "r");
-	char line[100];
+struct Node *parse_graph(FILE *file, struct Hashtable *hash) {
+	char line[MAX_LINE_SIZE];
 	struct Node *graph = NULL;
 
-	while (fgets(line, 100, file) != NULL) {
+	// create GNodes and add them to the graph linked list
+	while (fgets(line, MAX_LINE_SIZE, file) != NULL) {
 		struct StringList words;
 		words.first = words.last = NULL;
 		words.size = 0;
 
-		split_linked(&words, 100, line, ' ');
+		split_linked(&words, line, " \t\n");
+		if (words.first == NULL) continue;
 
-		struct StringNode *curr = words.first;
-		printf("creating GNode %s\n", curr->str);
-		struct GNode *newG = init_GNode(curr->str);
-		while ((curr = curr->next) != NULL && curr->str[0] != '\n') {
+		struct GNode *newG = init_GNode(words.first->str);
+		for (struct StringNode *curr = words.first->next; curr != NULL; curr = curr->next) {
 			connect(newG, curr->str);
 		}
 
 		struct Node *newN = malloc(sizeof (struct Node));
+		newN->key = newG->name;
 		newN->value = newG;
 		newN->next = graph;
-		newN->key = newG->name;
 		graph = newN;
 	}
 
-	struct Node *curr = graph;
-	while (curr != NULL) {
-		printf("adding %s to hash\n", curr->key);
+	// add all created nodes to hashtable
+	for (struct Node *curr = graph; curr != NULL; curr = curr->next) {
 		hash_add(hash, curr->key, curr->value);
-		curr = curr->next;
 	}
 
 	fclose(file);
 
 	return graph;
+}
+
+void reset_graph(struct Node *graph) {
+	while (graph != NULL) {
+		graph->value->checked = false;
+		graph->value->layer = 0;
+		graph->value->parent_name = NULL;
+
+		graph = graph->next;
+	}
 }
 
 void enqueue(struct Queue *q, struct GNode *node) {
@@ -78,44 +94,33 @@ void enqueue(struct Queue *q, struct GNode *node) {
 		q->last->next = new;
 		q->last = new;
 	}
-
-	printf("enqueued %s\n", node->name);
 }
 
 struct GNode *dequeue(struct Queue *q) {
-	if (q->first == NULL) {
-		printf("dequeued NULL\n");
-		return NULL;
-	}
+	if (q->first == NULL) return NULL;
 	else {
 		struct GNode *temp = q->first->value;
 		q->first = q->first->next;
-		printf("dequeued %s\n", temp->name);
 		return temp;
 	}
 }
 
 
 struct Node *search(struct Hashtable *hash, char *start, char *goal) {
-	printf("Search start\n");
 	if (strcmp(start, goal) == 0) return 0;
 
-	int n = 0;
 	struct GNode *nstart = hash_getv(hash, start);
-	struct GNode *curr;
-	struct Queue q;
-
-	printf("1\n");
 	nstart->checked = true;
 	nstart->parent_name = NULL;
-	q.first = q.last = NULL;
-	printf("2\n");
 
+	struct Queue q;
+	q.first = q.last = NULL;
 	enqueue(&q, nstart);
 
+	struct GNode *curr;
 	while ((curr = dequeue(&q)) != NULL) {
-		printf("looking at %s\n", curr->name);
 		if (strcmp(curr->name, goal) == 0) {
+			// recreate and return the path to goal (curr)
 			struct Node *first = malloc(sizeof (struct Node));
 			first->value = curr;
 			first->next = NULL;
@@ -123,24 +128,18 @@ struct Node *search(struct Hashtable *hash, char *start, char *goal) {
 
 			struct Node *new;
 			while (curr->parent_name != NULL) {
-				printf("searching parent %s\n", curr->parent_name);
 				new = hash_getn(hash, curr->parent_name);
-				if (new == NULL) printf("failed to get parent %s\n", curr->parent_name);
-				printf("got parent %s\n", new->key);
 				new->next = first;
 				first = new;
 				curr = new->value;
 			}
 
-
 		       	return first; 
 		}
-		++n;
 
+		// check current node and add every connection to the queue
 		for (struct StringNode *snd = curr->connections; snd != NULL; snd = snd->next) {
-			printf("searching for %s\n", snd->str);
 			struct GNode *temp = hash_getv(hash, snd->str);
-			printf("got %s\n", temp->name);
 
 			if (!(temp->checked)) {
 				enqueue(&q, temp);
