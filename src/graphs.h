@@ -19,9 +19,13 @@ void connect(struct GNode *node, char *str);
 // returns a node list of all nodes created or NULL
 struct Node *parse_graph(FILE *file, struct Hashtable *hash);
 
+// search: performs a deapth-first search on a hashtable containing a graph
+// returns a node list representing the shortest path from 'start' to 'goal', or NULL if no path is found
+struct Node *df_search(struct Hashtable *hash, char *start, char *goal);
+
 // search: performs a breadth-first search on a hashtable containing a graph
 // returns a node list representing the shortest path from 'start' to 'goal', or NULL if no path is found
-struct Node *search(struct Hashtable *hash, char *start, char *goal);
+struct Node *bf_search(struct Hashtable *hash, char *start, char *goal);
 
 // reset_graph: reset all nodes to a pre-search state, should be called before
 // a second search is performed

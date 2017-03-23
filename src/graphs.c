@@ -21,19 +21,39 @@ int main(int argc, char **argv) {
 
 	struct Node *graph = parse_graph(file, &hash);
 
+	printf("Type 'help' for help.\n");
 	printf("Enter queries ('start' 'goal'):\n## ");
-	char start[100];
-	char goal[100];
-	while (scanf("%s %s", &start, &goal) > 0) {
-		struct Node *path = search(&hash, start, goal);
-		reset_graph(graph);
-
-		printf(">> ");
-		while (path != NULL) {
-			printf("%s ", path->key);
-			path = path->next;
+	int buffer_size = 0;
+	char *buffer[2];
+	char last[100];
+	struct Node *(*search)(struct Hashtable*, char*, char*) = bf_search;
+	while (scanf("%s", last) > 0) {
+		if (buffer_size == 0 && strcmp(last, "help") == 0) {
+			printf(">> df: depth-first search\n");
+			printf(">> bf: breadth-first search\n");
+			printf(">> example: df a l\n");
+			printf("## ");
 		}
-		printf("\n## ");
+		else if (buffer_size == 0 && strcmp(last, "df") == 0) {
+			search = df_search;
+		}
+		else if (buffer_size == 0 && strcmp(last, "bf") == 0) {
+			search = bf_search;
+		}
+		else buffer[buffer_size++] = concat("", last);
+
+		if (buffer_size == 2) {
+			buffer_size = 0;
+			struct Node *path = search(&hash, buffer[0], buffer[1]);
+			reset_graph(graph);
+
+			printf(">> ");
+			while (path != NULL) {
+				printf("%s ", path->key);
+				path = path->next;
+			}
+			printf("\n## ");
+		}
 	}
 
 	return 0;
@@ -105,13 +125,51 @@ struct GNode *dequeue(struct Queue *q) {
 	}
 }
 
+struct Node *df_search(struct Hashtable *hash, char *start, char *goal) {
+	struct GNode *nstart = hash_getv(hash, start);
+	nstart->checked = true;
 
-struct Node *search(struct Hashtable *hash, char *start, char *goal) {
-	if (strcmp(start, goal) == 0) return 0;
+	if (strcmp(start, goal) == 0) {
+		// recreate and return the path to goal (nstar)
+		struct Node *first = malloc(sizeof (struct Node));
+		first->value = nstart;
+		first->next = NULL;
+		first->key = nstart->name;
 
+		struct Node *new;
+		while (first->value->parent_name != NULL) {
+			new = hash_getn(hash, first->value->parent_name);
+			new->next = first;
+			first = new;
+		}
+
+		return first; 
+	}
+
+	// recursively search all children of nstart
+	for (struct StringNode *snd = nstart->connections; snd != NULL; snd = snd->next) {
+		struct GNode *temp = hash_getv(hash, snd->str);
+		temp->parent_name = nstart->name;
+
+		struct Node *path = df_search(hash, snd->str, goal);
+		if (path != NULL) return path;
+	}
+
+	return NULL;
+}
+
+struct Node *bf_search(struct Hashtable *hash, char *start, char *goal) {
 	struct GNode *nstart = hash_getv(hash, start);
 	nstart->checked = true;
 	nstart->parent_name = NULL;
+
+	if (strcmp(start, goal) == 0) {
+		struct Node *node = malloc(sizeof (struct Node));
+		node->value = nstart;
+		node->next = NULL;
+		node->key = nstart->name;
+		return node;
+	}
 
 	struct Queue q;
 	q.first = q.last = NULL;
