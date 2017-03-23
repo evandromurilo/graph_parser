@@ -125,25 +125,30 @@ struct GNode *dequeue(struct Queue *q) {
 	}
 }
 
+struct Node *reconstruct_path(struct Hashtable *hash, struct GNode *end) {
+	struct Node *first = malloc(sizeof (struct Node));
+	first->value = end;
+	first->next = NULL;
+	first->key = end->name;
+
+	struct Node *new;
+	while (first->value->parent_name != NULL) {
+		new = hash_getn(hash, first->value->parent_name);
+		new->next = first;
+		first = new;
+	}
+
+	return first; 
+
+}
+
 struct Node *df_search(struct Hashtable *hash, char *start, char *goal) {
 	struct GNode *nstart = hash_getv(hash, start);
+	if (nstart == NULL) return NULL;
 	nstart->checked = true;
 
 	if (strcmp(start, goal) == 0) {
-		// recreate and return the path to goal (nstar)
-		struct Node *first = malloc(sizeof (struct Node));
-		first->value = nstart;
-		first->next = NULL;
-		first->key = nstart->name;
-
-		struct Node *new;
-		while (first->value->parent_name != NULL) {
-			new = hash_getn(hash, first->value->parent_name);
-			new->next = first;
-			first = new;
-		}
-
-		return first; 
+		return reconstruct_path(hash, nstart);
 	}
 
 	// recursively search all children of nstart
@@ -160,16 +165,9 @@ struct Node *df_search(struct Hashtable *hash, char *start, char *goal) {
 
 struct Node *bf_search(struct Hashtable *hash, char *start, char *goal) {
 	struct GNode *nstart = hash_getv(hash, start);
-	nstart->checked = true;
-	nstart->parent_name = NULL;
+	if (nstart == NULL) return NULL;
 
-	if (strcmp(start, goal) == 0) {
-		struct Node *node = malloc(sizeof (struct Node));
-		node->value = nstart;
-		node->next = NULL;
-		node->key = nstart->name;
-		return node;
-	}
+	nstart->checked = true;
 
 	struct Queue q;
 	q.first = q.last = NULL;
@@ -178,21 +176,7 @@ struct Node *bf_search(struct Hashtable *hash, char *start, char *goal) {
 	struct GNode *curr;
 	while ((curr = dequeue(&q)) != NULL) {
 		if (strcmp(curr->name, goal) == 0) {
-			// recreate and return the path to goal (curr)
-			struct Node *first = malloc(sizeof (struct Node));
-			first->value = curr;
-			first->next = NULL;
-			first->key = curr->name;
-
-			struct Node *new;
-			while (curr->parent_name != NULL) {
-				new = hash_getn(hash, curr->parent_name);
-				new->next = first;
-				first = new;
-				curr = new->value;
-			}
-
-		       	return first; 
+			return reconstruct_path(hash, curr);
 		}
 
 		// check current node and add every connection to the queue
