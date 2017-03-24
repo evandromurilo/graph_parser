@@ -4,9 +4,10 @@
 #include "../lib/m_basics.h"
 #include "graphs.h"
 
+
 int main(int argc, char **argv) {
 	if (argc == 1) {
-		printf("Use: ./graphs 'graphfile.txt'.\n");
+		printf("Use:: ./graphs 'graphfile.txt'.\n");
 		return 1;
 	}
 
@@ -55,6 +56,7 @@ int main(int argc, char **argv) {
 			printf("\n## ");
 		}
 	}
+	putchar('\n');
 
 	return 0;
 }
@@ -139,7 +141,6 @@ struct Node *reconstruct_path(struct Hashtable *hash, struct GNode *end) {
 	}
 
 	return first; 
-
 }
 
 struct Node *df_search(struct Hashtable *hash, char *start, char *goal) {
@@ -154,6 +155,8 @@ struct Node *df_search(struct Hashtable *hash, char *start, char *goal) {
 	// recursively search all children of nstart
 	for (struct StringNode *snd = nstart->connections; snd != NULL; snd = snd->next) {
 		struct GNode *temp = hash_getv(hash, snd->str);
+		if (temp->checked) continue;
+
 		temp->parent_name = nstart->name;
 
 		struct Node *path = df_search(hash, snd->str, goal);
@@ -179,7 +182,7 @@ struct Node *bf_search(struct Hashtable *hash, char *start, char *goal) {
 			return reconstruct_path(hash, curr);
 		}
 
-		// check current node and add every connection to the queue
+		// add every unchecked connection to the queue
 		for (struct StringNode *snd = curr->connections; snd != NULL; snd = snd->next) {
 			struct GNode *temp = hash_getv(hash, snd->str);
 
