@@ -5,13 +5,16 @@ OUT = -o ../bin/graphs
 PROG = graphs
 OBJS = graphs.o ../lib/hash.o ../lib/m_basics.o
 SRCS = graphs.c ../lib/hash.c ../lib/m_basics.c
-DEPS = ../lib/m_basics.h ../lib/hash.h graphs.h
+DEPS = ../lib/m_basics.h ../lib/hash.h graphs.h structures.h
 
 %.o: %.c $(DEPS)
 	$(CC) $(DEBUG) -g -c -o $@ $< $(CFLAGS)
 
 $(PROG): $(OBJS)
 	$(CC) $(DEBUG) $(OUT) $(CFLAGS) $(OBJS)
+
+graph_file_tester:
+	gcc -o ../bin/graph_file_tester graph_file_tester.c ../lib/m_basics.c
 
 run:
 	../bin/graphs test.txt
