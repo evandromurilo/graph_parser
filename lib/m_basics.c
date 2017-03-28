@@ -102,15 +102,6 @@ int discard_while(char *goals) {
 	return n;
 }
 
-bool is_in(char c, char *goals) {
-	while (*goals != '\0') {
-		if (*goals == c) {
-			return true;
-		}
-		goals++;
-	}
-}
-
 int read_until(int goal, char* str, int size) {
 	int c, i;
 
@@ -120,6 +111,16 @@ int read_until(int goal, char* str, int size) {
 
 	*str = '\0';
 	return i;
+}
+
+bool char_in_string(char c, char *goals) {
+	while (*goals != '\0') {
+		if (*goals == c) {
+			return true;
+		}
+		goals++;
+	}
+	return false;
 }
 
 #define MAX_WORD_SIZE 100
@@ -145,45 +146,6 @@ int split(char** arr, int size, char* str, char goal) {
 	}
 
 	return total;
-}
-
-int split_linked(struct StringList *list, char* str, char *goal) {
-	char word[MAX_WORD_SIZE+1];
-	int i, c, total = 0;
-
-	while (*str != '\0') {
-		while (is_in(*str, goal) && *str != '\0') ++str;
-
-		if (*str == '\0') break;
-
-		for (i = 0; i < MAX_WORD_SIZE && !(is_in(*str, goal)) && *str != '\0'; 
-				++i, ++str) {
-			word[i] = *str;
-		}
-		word[i] = '\0';
-
-		char* nword = malloc(i);
-		strcpy(nword, word);
-
-		append_string(list, nword);
-		++total;
-	}
-
-	return total;
-}
-
-struct StringNode *append_string(struct StringList *list, char* word) {
-	struct StringNode *new = malloc(sizeof(struct StringNode));
-
-	new->str = word;
-	new->next = NULL;
-
-	if (list->first == NULL) list->first = list->last = new;
-	else list->last = list->last->next = new;
-
-	(list->size)++;
-
-	return new;
 }
 
 bool is_prime(int n) {

@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "../src/structures.h"
 
 // len: returns the length of the string 's'
 int len(char *s);
@@ -52,16 +51,13 @@ int discard_while(char *goals);
 // returns the amount of chars read
 int read_until(int goal, char* str, int size);
 
-bool is_in(char c, char *goals);
+bool char_in_string(char c, char *goals);
 
 // split: splits 'str' into various strings with 'goal' being the separator
 // strings are stored in the array 'arr' of size 'size'
 // returns the resulting amount of strings
 int split(char** arr, int size, char* str, char goal);
 
-int split_linked(struct StringList *list, char* str, char *goal);
-struct StringNode *append_string(struct StringList *list, char* word);
-	
 // is_prime: returns true if n is prime
 bool is_prime(int n);
 

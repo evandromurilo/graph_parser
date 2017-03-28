@@ -1,9 +1,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "../lib/m_list.h"
 #include "../lib/m_basics.h"
 #include "graphs.h"
-
 
 int main(int argc, char **argv) {
 	if (argc == 1) {
@@ -67,17 +67,17 @@ struct Node *parse_graph(FILE *file, struct Hashtable *hash) {
 
 	// create GNodes and add them to the graph linked list
 	while (fgets(line, MAX_LINE_SIZE, file) != NULL) {
-		struct StringList words;
-		words.first = words.last = NULL;
-		words.size = 0;
+		struct LinkedList *words = init_list();
 
-		split_linked(&words, line, " \t\n");
-		if (words.first == NULL) continue;
+		split_linked(words, line, " \t\n");
+		if (words->length == 0) continue;
 
-		struct GNode *newG = init_GNode(words.first->str);
-		for (struct StringNode *curr = words.first->next; curr != NULL; curr = curr->next) {
-			connect(newG, curr->str);
+		struct GNode *newG = init_GNode(pop_first(words));
+		for (char *curr = pop_first(words); curr != NULL; curr = pop_first(words)) {
+			connect(newG, curr);
+			free(curr);
 		}
+		free(words);
 
 		struct Node *newN = malloc(sizeof (struct Node));
 		newN->key = newG->name;
@@ -98,32 +98,12 @@ struct Node *parse_graph(FILE *file, struct Hashtable *hash) {
 
 void reset_graph(struct Node *graph) {
 	while (graph != NULL) {
-		graph->value->checked = false;
-		graph->value->layer = 0;
-		graph->value->parent_name = NULL;
+		struct GNode *graphv = graph->value;
+		graphv->checked = false;
+		graphv->layer = 0;
+		graphv->parent_name = NULL;
 
 		graph = graph->next;
-	}
-}
-
-void enqueue(struct Queue *q, struct GNode *node) {
-	struct QNode *new = malloc(sizeof(struct QNode));
-	new->next = NULL;
-	new->value = node;
-
-	if (q->first == NULL) q->first = q->last = new;
-	else {
-		q->last->next = new;
-		q->last = new;
-	}
-}
-
-struct GNode *dequeue(struct Queue *q) {
-	if (q->first == NULL) return NULL;
-	else {
-		struct GNode *temp = q->first->value;
-		q->first = q->first->next;
-		return temp;
 	}
 }
 
@@ -134,8 +114,8 @@ struct Node *reconstruct_path(struct Hashtable *hash, struct GNode *end) {
 	first->key = end->name;
 
 	struct Node *new;
-	while (first->value->parent_name != NULL) {
-		new = hash_getn(hash, first->value->parent_name);
+	while (((struct GNode *)(first->value))->parent_name != NULL) {
+		new = hash_getn(hash, ((struct GNode *)(first->value))->parent_name);
 		new->next = first;
 		first = new;
 	}
@@ -153,13 +133,13 @@ struct Node *df_search(struct Hashtable *hash, char *start, char *goal) {
 	}
 
 	// recursively search all children of nstart
-	for (struct StringNode *snd = nstart->connections; snd != NULL; snd = snd->next) {
-		struct GNode *temp = hash_getv(hash, snd->str);
+	for (struct LinkedNode *snd = nstart->connections; snd != NULL; snd = snd->next) {
+		struct GNode *temp = hash_getv(hash, snd->value);
 		if (temp->checked) continue;
 
 		temp->parent_name = nstart->name;
 
-		struct Node *path = df_search(hash, snd->str, goal);
+		struct Node *path = df_search(hash, snd->value, goal);
 		if (path != NULL) return path;
 	}
 
@@ -172,22 +152,21 @@ struct Node *bf_search(struct Hashtable *hash, char *start, char *goal) {
 
 	nstart->checked = true;
 
-	struct Queue q;
-	q.first = q.last = NULL;
-	enqueue(&q, nstart);
+	struct LinkedList *q = init_list();
+	append_to_list(q, nstart);
 
 	struct GNode *curr;
-	while ((curr = dequeue(&q)) != NULL) {
+	while ((curr = pop_first(q)) != NULL) {
 		if (strcmp(curr->name, goal) == 0) {
 			return reconstruct_path(hash, curr);
 		}
 
 		// add every unchecked connection to the queue
-		for (struct StringNode *snd = curr->connections; snd != NULL; snd = snd->next) {
-			struct GNode *temp = hash_getv(hash, snd->str);
+		for (struct LinkedNode *snd = curr->connections; snd != NULL; snd = snd->next) {
+			struct GNode *temp = hash_getv(hash, snd->value);
 
 			if (!(temp->checked)) {
-				enqueue(&q, temp);
+				append_to_list(q, temp);
 				temp->layer = curr->layer + 1;
 				temp->parent_name = curr->name;
 				temp->checked = true;
@@ -199,8 +178,8 @@ struct Node *bf_search(struct Hashtable *hash, char *start, char *goal) {
 }
 
 void connect(struct GNode *node, char *str) {
-	struct StringNode *new = malloc(sizeof (struct StringNode));
-	new->str = concat("", str);
+	struct LinkedNode *new = malloc(sizeof (struct LinkedNode));
+	new->value = concat("", str);
 	new->next = node->connections;
 	node->connections = new;
 }

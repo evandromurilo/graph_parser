@@ -2,10 +2,19 @@
 #define GRAPHS_H
 
 #include "../lib/hash.h"
-#include "structures.h"
 
 // used in the parse_graph function
 #define MAX_LINE_SIZE 1000
+
+// a graph node
+struct GNode {
+	char *name;
+	struct LinkedNode *connections;
+	// variables from here on are used only during searches
+	char *parent_name;
+	bool checked;
+	int layer;
+};
 
 // init_GNode: initializes a GNode
 // returns a pointer to it
@@ -33,11 +42,5 @@ struct Node *bf_search(struct Hashtable *hash, char *start, char *goal);
 // reset_graph: reset all nodes to a pre-search state, should be called before
 // a second search is performed
 void reset_graph(struct Node *graph);
-
-// dequeue: takes an item from the queue 'q'
-struct GNode *dequeue(struct Queue *q);
-
-// enqueue: enqueue an item in the queue 'q'
-void enqueue(struct Queue *q, struct GNode *node);
 
 #endif

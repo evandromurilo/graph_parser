@@ -3,9 +3,9 @@ CFLAGS = -I ../lib
 OUT = -o ../bin/graphs
 
 PROG = graphs
-OBJS = graphs.o ../lib/hash.o ../lib/m_basics.o
-SRCS = graphs.c ../lib/hash.c ../lib/m_basics.c
-DEPS = ../lib/m_basics.h ../lib/hash.h graphs.h structures.h
+OBJS = graphs.o ../lib/hash.o ../lib/m_basics.o ../lib/m_list.o
+SRCS = graphs.c ../lib/hash.c ../lib/m_basics.c ../lib/m_list.c
+DEPS = ../lib/m_basics.h ../lib/hash.h graphs.h ../lib/m_list.h structures.h
 
 %.o: %.c $(DEPS)
 	$(CC) $(DEBUG) -g -c -o $@ $< $(CFLAGS)

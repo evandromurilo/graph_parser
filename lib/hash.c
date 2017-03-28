@@ -43,7 +43,7 @@ void hash_init(struct Hashtable *table) {
 	for (int i = 0; i < INITIAL_SIZE; ++i) table->values[i] = NULL;
 }
 
-void hash_add(struct Hashtable *table, char *key, struct GNode *value) {
+void hash_add(struct Hashtable *table, char *key, void *value) {
 	double load_factor = (double) table->stored / table->size;
 	char* a_key = concat("", key);
 
@@ -104,7 +104,7 @@ struct Node *hash_getn(struct Hashtable *table, char *key) {
 	return curr;
 }
 
-struct GNode *hash_getv(struct Hashtable *table, char *key) {
+void *hash_getv(struct Hashtable *table, char *key) {
 	struct Node *curr = hash_getn(table, key);
 	return curr == NULL ? 0 : curr->value;
 }
@@ -114,7 +114,7 @@ void prepend(struct Node **head, struct Node *new) {
 	*head = new;
 }
 
-int hash_remove(struct Hashtable *table, char *key) {
+void *hash_remove(struct Hashtable *table, char *key) {
 	if (DEBUG) printf("Removing node %s.\n", key);
 	int i = hash_function(key) % table->size;
 	struct Node *prev, *curr;
@@ -123,7 +123,7 @@ int hash_remove(struct Hashtable *table, char *key) {
 	curr = table->values[i];
 	for (; curr != NULL && strcmp(curr->key, key) != 0; prev = curr, curr = curr->next);
 
-	if (curr == NULL) return 1;
+	if (curr == NULL) return NULL;
 	else if (prev == NULL) {
 		table->values[i] = curr->next;
 	}
@@ -131,18 +131,10 @@ int hash_remove(struct Hashtable *table, char *key) {
 		prev->next = curr->next;
 	}
 
+	void *value = curr->value;
 	free(curr->key);
-
-	struct GNode *node = curr->value;
-	free(node->name);
-	while (node->connections != NULL) {
-		struct StringNode *temp = node->connections;
-		node->connections = node->connections->next;
-		free(temp);
-	}
-		
 	free(curr);
 	--(table->stored);
 
-	return 0;
+	return value;
 }
