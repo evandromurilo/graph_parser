@@ -17,17 +17,15 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	struct Hashtable hash;
-	hash_init(&hash);
-
-	struct Node *graph = parse_graph(file, &hash);
+	struct Hashtable *hash = hash_init(hash);
+	struct LinkedList *graph = parse_graph(file, hash);
 
 	printf("Type 'help' for help.\n");
 	printf("Enter queries ('start' 'goal'):\n## ");
 	int buffer_size = 0;
 	char *buffer[2];
 	char last[100];
-	struct Node *(*search)(struct Hashtable*, char*, char*) = bf_search;
+	struct LinkedList *(*search)(struct Hashtable*, char*, char*) = bf_search;
 	while (scanf("%s", last) > 0) {
 		if (buffer_size == 0 && strcmp(last, "help") == 0) {
 			printf(">> df: depth-first search\n");
@@ -45,13 +43,14 @@ int main(int argc, char **argv) {
 
 		if (buffer_size == 2) {
 			buffer_size = 0;
-			struct Node *path = search(&hash, buffer[0], buffer[1]);
+			struct LinkedList *path = search(hash, buffer[0], buffer[1]);
 			reset_graph(graph);
 
 			printf(">> ");
-			while (path != NULL) {
-				printf("%s ", path->key);
-				path = path->next;
+			if (path != NULL) {
+				for (struct GNode *curr = pop_first(path); curr != NULL; curr = pop_first(path)) {
+					printf("%s ", curr->name);
+				}
 			}
 			printf("\n## ");
 		}
@@ -61,9 +60,9 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-struct Node *parse_graph(FILE *file, struct Hashtable *hash) {
+struct LinkedList *parse_graph(FILE *file, struct Hashtable *hash) {
 	char line[MAX_LINE_SIZE];
-	struct Node *graph = NULL;
+	struct LinkedList *graph = init_list();
 
 	// create GNodes and add them to the graph linked list
 	while (fgets(line, MAX_LINE_SIZE, file) != NULL) {
@@ -79,16 +78,13 @@ struct Node *parse_graph(FILE *file, struct Hashtable *hash) {
 		}
 		free(words);
 
-		struct Node *newN = malloc(sizeof (struct Node));
-		newN->key = newG->name;
-		newN->value = newG;
-		newN->next = graph;
-		graph = newN;
+		append_to_list(graph, newG);
 	}
 
 	// add all created nodes to hashtable
-	for (struct Node *curr = graph; curr != NULL; curr = curr->next) {
-		hash_add(hash, curr->key, curr->value);
+	for (struct LinkedNode *curr = graph->first; curr != NULL; curr = curr->next) {
+		struct GNode *temp = curr->value;
+		hash_add(hash, temp->name, temp);
 	}
 
 	fclose(file);
@@ -96,34 +92,27 @@ struct Node *parse_graph(FILE *file, struct Hashtable *hash) {
 	return graph;
 }
 
-void reset_graph(struct Node *graph) {
-	while (graph != NULL) {
-		struct GNode *graphv = graph->value;
+void reset_graph(struct LinkedList *graph) {
+	for (struct LinkedNode *curr = graph->first; curr != NULL; curr = curr->next) {
+		struct GNode *graphv = curr->value;
 		graphv->checked = false;
 		graphv->layer = 0;
 		graphv->parent_name = NULL;
-
-		graph = graph->next;
 	}
 }
 
-struct Node *reconstruct_path(struct Hashtable *hash, struct GNode *end) {
-	struct Node *first = malloc(sizeof (struct Node));
-	first->value = end;
-	first->next = NULL;
-	first->key = end->name;
+struct LinkedList *reconstruct_path(struct Hashtable *hash, struct GNode *end) {
+	struct LinkedList *path = init_list();
+	prepend_to_list(path, end);
 
-	struct Node *new;
-	while (((struct GNode *)(first->value))->parent_name != NULL) {
-		new = hash_getn(hash, ((struct GNode *)(first->value))->parent_name);
-		new->next = first;
-		first = new;
+	while (((struct GNode *)(path->first->value))->parent_name != NULL) {
+		prepend_to_list(path, hash_getv(hash, ((struct GNode *)(path->first->value))->parent_name));
 	}
 
-	return first; 
+	return path; 
 }
 
-struct Node *df_search(struct Hashtable *hash, char *start, char *goal) {
+struct LinkedList *df_search(struct Hashtable *hash, char *start, char *goal) {
 	struct GNode *nstart = hash_getv(hash, start);
 	if (nstart == NULL) return NULL;
 	nstart->checked = true;
@@ -139,14 +128,14 @@ struct Node *df_search(struct Hashtable *hash, char *start, char *goal) {
 
 		temp->parent_name = nstart->name;
 
-		struct Node *path = df_search(hash, snd->value, goal);
+		struct LinkedList *path = df_search(hash, snd->value, goal);
 		if (path != NULL) return path;
 	}
 
 	return NULL;
 }
 
-struct Node *bf_search(struct Hashtable *hash, char *start, char *goal) {
+struct LinkedList *bf_search(struct Hashtable *hash, char *start, char *goal) {
 	struct GNode *nstart = hash_getv(hash, start);
 	if (nstart == NULL) return NULL;
 
@@ -194,3 +183,4 @@ struct GNode *init_GNode(char *name) {
 
 	return new;
 }
+

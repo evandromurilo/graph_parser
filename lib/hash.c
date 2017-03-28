@@ -1,5 +1,8 @@
 #include "hash.h"
 
+// prepend: sets new->next to head, then swaps head for new
+void prepend(struct HashNode **head, struct HashNode *new);
+
 unsigned long hash_function(unsigned char *str) {
 	return DEFAULT_HASH_FUNCTION(str);
 }
@@ -35,12 +38,15 @@ unsigned long fnv1a(unsigned char *str) {
 	return hash;
 }
 
-void hash_init(struct Hashtable *table) {
+struct Hashtable *hash_init() {
+	struct Hashtable *table = malloc(sizeof(struct Hashtable));
 	table->size = INITIAL_SIZE;
 	table->stored = 0;
-	table->values = malloc(sizeof(struct Node*) * INITIAL_SIZE);
+	table->values = malloc(sizeof(struct HashNode*) * INITIAL_SIZE);
 
 	for (int i = 0; i < INITIAL_SIZE; ++i) table->values[i] = NULL;
+	
+	return table;
 }
 
 void hash_add(struct Hashtable *table, char *key, void *value) {
@@ -51,11 +57,11 @@ void hash_add(struct Hashtable *table, char *key, void *value) {
 
 	if (load_factor >= 0.7) hash_expand(table);
 
-	struct Node *check = hash_getn(table, key);
+	struct HashNode *check = hash_getn(table, key);
 
 	if (check != NULL) check->value = value;
 	else {
-		struct Node *new = malloc(sizeof(struct Node));
+		struct HashNode *new = malloc(sizeof(struct HashNode));
 		new->value = value;
 		new->key = a_key;
 
@@ -68,16 +74,16 @@ void hash_add(struct Hashtable *table, char *key, void *value) {
 void hash_expand(struct Hashtable *table) {
 	if (DEBUG) printf("Expanding hashtable.\n");
 	int n_size = next_prime(table->size * 2);
-	struct Node **n_values = malloc(sizeof(struct Node*) * n_size);
+	struct HashNode **n_values = malloc(sizeof(struct HashNode*) * n_size);
 
 	for (int i = 0; i < n_size; ++i) n_values[i] = NULL;
 
 	for (int i = 0; i < table->size; ++i) {
-		struct Node* curr = table->values[i];
+		struct HashNode* curr = table->values[i];
 
 		while (curr != NULL) {
 			int ni = hash_function(curr->key) % n_size;
-			struct Node* next = curr->next;
+			struct HashNode* next = curr->next;
 
 			prepend(&(n_values[ni]), curr);
 			if (DEBUG) printf("%s from %li to %d\n", curr->key, hash_function(curr->key)%table->size, ni);
@@ -89,11 +95,11 @@ void hash_expand(struct Hashtable *table) {
 	table->values = n_values;
 }
 
-struct Node *hash_getn(struct Hashtable *table, char *key) {
+struct HashNode *hash_getn(struct Hashtable *table, char *key) {
 	if (DEBUG) printf("Getting node %s.\n", key);
 	int i = hash_function(key) % table->size;
 
-	struct Node *curr = table->values[i];
+	struct HashNode *curr = table->values[i];
 
 	if (DEBUG) if (curr == NULL) printf("there is nothing here at index %d!\n", i);
 	while (curr != NULL && strcmp(curr->key, key) != 0) {
@@ -105,11 +111,11 @@ struct Node *hash_getn(struct Hashtable *table, char *key) {
 }
 
 void *hash_getv(struct Hashtable *table, char *key) {
-	struct Node *curr = hash_getn(table, key);
-	return curr == NULL ? 0 : curr->value;
+	struct HashNode *curr = hash_getn(table, key);
+	return curr == NULL ? NULL : curr->value;
 }
 
-void prepend(struct Node **head, struct Node *new) {
+void prepend(struct HashNode **head, struct HashNode *new) {
 	new->next = *head;
 	*head = new;
 }
@@ -117,7 +123,7 @@ void prepend(struct Node **head, struct Node *new) {
 void *hash_remove(struct Hashtable *table, char *key) {
 	if (DEBUG) printf("Removing node %s.\n", key);
 	int i = hash_function(key) % table->size;
-	struct Node *prev, *curr;
+	struct HashNode *prev, *curr;
 
 	prev = NULL;
 	curr = table->values[i];

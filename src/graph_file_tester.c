@@ -1,15 +1,14 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include "../lib/hash.h"
 #include "../lib/m_basics.h"
-#include "structures.h"
+#include "../lib/m_list.h"
 
 #define MAX_LINE_SIZE 1000
 
-bool present_in(char *str, struct StringList *list);
-
 int main(int argc, char **argv) {
 	if (argc == 1) {
-		printf("Use:: ./graphs 'graphfile.txt'.\n");
+		printf("Use: ./graphs 'graphfile.txt'.\n");
 		return 1;
 	}
 
@@ -19,33 +18,28 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	struct StringList cited;
-	struct StringList defined;
-	cited.first = cited.last = defined.first = defined.last = NULL;
-	cited.size = defined.size = 0;
+	struct Hashtable *defined = hash_init();
+	struct LinkedList *cited = init_list();
 
 	char line[MAX_LINE_SIZE];
 
 	while (fgets(line, MAX_LINE_SIZE, file) != NULL) {
-		struct StringList words;
-		words.first = words.last = NULL;
-		words.size = 0;
+		struct LinkedList *words = init_list();
 
-		split_linked(&words, line, " \t\n");
-		if (words.first == NULL) continue;
+		split_linked(words, line, " \t\n");
+		if (words->length == 0) continue;
 
-		
-		append_string(&defined, words.first->str);
-		for (struct StringNode *curr = words.first->next; curr != NULL; curr = curr->next) {
-			append_string(&cited, curr->str);
-		}
+		hash_add(defined, pop_first(words), NULL);
+
+		char *curr;
+		while (curr = pop_first(words)) append_to_list(cited, curr);
 	}
 
 	bool ok = true;
-	for (struct StringNode *curr = cited.first; curr != NULL; curr = curr->next) {
-		if (!present_in(curr->str, &defined)) {
+	for (char *curr = pop_first(cited); curr != NULL; curr = pop_first(cited)) {
+		if (hash_getn(defined, curr) == NULL) {
 			ok = false;
-			printf("Node %s cited but not defined!\n", curr->str);
+			printf("Node %s cited but not defined!\n", curr);
 		}
 	}
 
@@ -53,12 +47,4 @@ int main(int argc, char **argv) {
 
 	if (ok) printf("No problems found.\n");
 	return 0;
-}
-
-bool present_in(char *str, struct StringList *list) {
-	for (struct StringNode *curr = list->first; curr != NULL; curr = curr->next) {
-		if (strcmp(curr->str, str) == 0) return true;
-	}
-
-	return false;
 }

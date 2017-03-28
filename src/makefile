@@ -14,7 +14,7 @@ $(PROG): $(OBJS)
 	$(CC) $(DEBUG) $(OUT) $(CFLAGS) $(OBJS)
 
 graph_file_tester:
-	gcc -o ../bin/graph_file_tester graph_file_tester.c ../lib/m_basics.c
+	gcc -o ../bin/graph_file_tester graph_file_tester.c ../lib/m_basics.c ../lib/m_list.c ../lib/hash.c
 
 run:
 	../bin/graphs test.txt

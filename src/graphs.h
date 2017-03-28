@@ -26,21 +26,21 @@ void connect(struct GNode *node, char *str);
 // parse_graph: parses a file containing a graph configuration (see 'test.txt' for an example), adds
 // all nodes to a hashtable
 // returns a node list of all nodes created or NULL
-struct Node *parse_graph(FILE *file, struct Hashtable *hash);
+struct LinkedList *parse_graph(FILE *file, struct Hashtable *hash);
 
 // reconstruct_path: takes a GNode at the end of a search and returns the path that led to it
-struct Node *reconstruct_path(struct Hashtable *hash, struct GNode *end);
+struct LinkedList *reconstruct_path(struct Hashtable *hash, struct GNode *end);
 
 // search: performs a deapth-first search on a hashtable containing a graph
 // returns a node list representing the shortest path from 'start' to 'goal', or NULL if no path is found
-struct Node *df_search(struct Hashtable *hash, char *start, char *goal);
+struct LinkedList *df_search(struct Hashtable *hash, char *start, char *goal);
 
 // search: performs a breadth-first search on a hashtable containing a graph
 // returns a node list representing the shortest path from 'start' to 'goal', or NULL if no path is found
-struct Node *bf_search(struct Hashtable *hash, char *start, char *goal);
+struct LinkedList *bf_search(struct Hashtable *hash, char *start, char *goal);
 
 // reset_graph: reset all nodes to a pre-search state, should be called before
 // a second search is performed
-void reset_graph(struct Node *graph);
+void reset_graph(struct LinkedList *graph);
 
 #endif
