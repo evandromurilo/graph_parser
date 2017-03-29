@@ -7,7 +7,7 @@
 
 int main(int argc, char **argv) {
 	if (argc == 1) {
-		printf("Use:: ./graphs 'graphfile.txt'.\n");
+		printf("Use: ./graphs 'graphfile.txt'.\n");
 		return 1;
 	}
 
@@ -25,11 +25,12 @@ int main(int argc, char **argv) {
 	int buffer_size = 0;
 	char *buffer[2];
 	char last[100];
-	struct LinkedList *(*search)(struct Hashtable*, char*, char*) = bf_search;
+	struct LinkedList *(*search)(struct Hashtable*, char*, char*, struct LinkedList*) = bf_search;
 	while (scanf("%s", last) > 0) {
 		if (buffer_size == 0 && strcmp(last, "help") == 0) {
 			printf(">> df: depth-first search\n");
 			printf(">> bf: breadth-first search\n");
+			printf(">> id: iterative deepening search\n");
 			printf(">> example: df a l\n");
 			printf("## ");
 		}
@@ -39,11 +40,14 @@ int main(int argc, char **argv) {
 		else if (buffer_size == 0 && strcmp(last, "bf") == 0) {
 			search = bf_search;
 		}
+		else if (buffer_size == 0 && strcmp(last, "id") == 0) {
+			search = id_search;
+		}
 		else buffer[buffer_size++] = concat("", last);
 
 		if (buffer_size == 2) {
 			buffer_size = 0;
-			struct LinkedList *path = search(hash, buffer[0], buffer[1]);
+			struct LinkedList *path = search(hash, buffer[0], buffer[1], graph);
 			reset_graph(graph);
 
 			printf(">> ");
@@ -112,7 +116,7 @@ struct LinkedList *reconstruct_path(struct Hashtable *hash, struct GNode *end) {
 	return path; 
 }
 
-struct LinkedList *df_search(struct Hashtable *hash, char *start, char *goal) {
+struct LinkedList *df_search(struct Hashtable *hash, char *start, char *goal, struct LinkedList *graph) {
 	struct GNode *nstart = hash_getv(hash, start);
 	if (nstart == NULL) return NULL;
 	nstart->checked = true;
@@ -128,14 +132,14 @@ struct LinkedList *df_search(struct Hashtable *hash, char *start, char *goal) {
 
 		temp->parent_name = nstart->name;
 
-		struct LinkedList *path = df_search(hash, snd->value, goal);
+		struct LinkedList *path = df_search(hash, snd->value, goal, graph);
 		if (path != NULL) return path;
 	}
 
 	return NULL;
 }
 
-struct LinkedList *bf_search(struct Hashtable *hash, char *start, char *goal) {
+struct LinkedList *bf_search(struct Hashtable *hash, char *start, char *goal, struct LinkedList *graph) {
 	struct GNode *nstart = hash_getv(hash, start);
 	if (nstart == NULL) return NULL;
 
@@ -164,6 +168,41 @@ struct LinkedList *bf_search(struct Hashtable *hash, char *start, char *goal) {
 	}
 
 	return NULL;
+}
+
+struct LinkedList *id_search(struct Hashtable *hash, char *start, char *goal, struct LinkedList *graph) {
+	struct GNode *nstart = hash_getv(hash, start);
+	if (nstart == NULL) return NULL;
+
+	int max_layer = 2;
+
+	while (true) {
+		struct LinkedList *stack = init_list();
+		prepend_to_list(stack, nstart);
+		nstart->checked = true;
+
+		struct GNode *curr;
+		while (curr = pop_first(stack)) {
+			if (strcmp(curr->name, goal) == 0) return reconstruct_path(hash, curr);
+			else if (curr->layer+1 > max_layer) break;
+
+			for (struct LinkedNode *nd = curr->connections; nd != NULL; nd = nd->next) {
+				struct GNode *gnd = hash_getv(hash, nd->value);
+
+				if (!(gnd->checked)) {
+					gnd->checked = true;
+					gnd->layer = curr->layer + 1;
+					gnd->parent_name = curr->name;
+					prepend_to_list(stack, gnd);
+				}
+			}
+		}
+
+		if (stack->length == 0) return NULL;
+		reset_graph(graph);
+		++max_layer;
+		free(stack);
+	}
 }
 
 void connect(struct GNode *node, char *str) {

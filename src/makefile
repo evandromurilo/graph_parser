@@ -1,5 +1,5 @@
 C = gcc
-CFLAGS = -I ../lib 
+CFLAGS = -I ../lib -g
 OUT = -o ../bin/graphs
 
 PROG = graphs
@@ -8,13 +8,13 @@ SRCS = graphs.c ../lib/hash.c ../lib/m_basics.c ../lib/m_list.c
 DEPS = ../lib/m_basics.h ../lib/hash.h graphs.h ../lib/m_list.h structures.h
 
 %.o: %.c $(DEPS)
-	$(CC) $(DEBUG) -g -c -o $@ $< $(CFLAGS)
+	$(CC) $(DEBUG) -c -o $@ $< $(CFLAGS)
 
 $(PROG): $(OBJS)
 	$(CC) $(DEBUG) $(OUT) $(CFLAGS) $(OBJS)
 
 graph_file_tester:
-	gcc -o ../bin/graph_file_tester graph_file_tester.c ../lib/m_basics.c ../lib/m_list.c ../lib/hash.c
+	gcc -g -o ../bin/graph_file_tester graph_file_tester.c ../lib/m_basics.c ../lib/m_list.c ../lib/hash.c
 
 run:
 	../bin/graphs test.txt

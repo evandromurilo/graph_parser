@@ -33,11 +33,15 @@ struct LinkedList *reconstruct_path(struct Hashtable *hash, struct GNode *end);
 
 // search: performs a deapth-first search on a hashtable containing a graph
 // returns a node list representing the shortest path from 'start' to 'goal', or NULL if no path is found
-struct LinkedList *df_search(struct Hashtable *hash, char *start, char *goal);
+struct LinkedList *df_search(struct Hashtable *hash, char *start, char *goal, struct LinkedList *graph);
 
 // search: performs a breadth-first search on a hashtable containing a graph
 // returns a node list representing the shortest path from 'start' to 'goal', or NULL if no path is found
-struct LinkedList *bf_search(struct Hashtable *hash, char *start, char *goal);
+struct LinkedList *bf_search(struct Hashtable *hash, char *start, char *goal, struct LinkedList *graph);
+
+// search: performs an iterative deepening search on a hashtable containing a graph
+// returns a node list representing the shortest path from 'start' to 'goal', or NULL if no path is found
+struct LinkedList *id_search(struct Hashtable *hash, char *start, char *goal, struct LinkedList *graph);
 
 // reset_graph: reset all nodes to a pre-search state, should be called before
 // a second search is performed
