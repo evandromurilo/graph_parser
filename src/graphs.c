@@ -119,23 +119,31 @@ struct LinkedList *reconstruct_path(struct Hashtable *hash, struct GNode *end) {
 struct LinkedList *df_search(struct Hashtable *hash, char *start, char *goal, struct LinkedList *graph) {
 	struct GNode *nstart = hash_getv(hash, start);
 	if (nstart == NULL) return NULL;
+
+	struct LinkedList *stack = init_list();
+	prepend_to_list(stack, nstart);
 	nstart->checked = true;
 
-	if (strcmp(start, goal) == 0) {
-		return reconstruct_path(hash, nstart);
+	struct GNode *curr;
+	while (curr = pop_first(stack)) {
+		if (strcmp(curr->name, goal) == 0) {
+			free(stack);
+			return reconstruct_path(hash, curr);
+		}
+
+		for (struct LinkedNode *nd = curr->connections; nd != NULL; nd = nd->next) {
+			struct GNode *gnd = hash_getv(hash, nd->value);
+
+			if (!(gnd->checked)) {
+				gnd->checked = true;
+				gnd->layer = curr->layer + 1;
+				gnd->parent_name = curr->name;
+				prepend_to_list(stack, gnd);
+			}
+		}
 	}
 
-	// recursively search all children of nstart
-	for (struct LinkedNode *snd = nstart->connections; snd != NULL; snd = snd->next) {
-		struct GNode *temp = hash_getv(hash, snd->value);
-		if (temp->checked) continue;
-
-		temp->parent_name = nstart->name;
-
-		struct LinkedList *path = df_search(hash, snd->value, goal, graph);
-		if (path != NULL) return path;
-	}
-
+	free(stack);
 	return NULL;
 }
 
@@ -151,6 +159,7 @@ struct LinkedList *bf_search(struct Hashtable *hash, char *start, char *goal, st
 	struct GNode *curr;
 	while ((curr = pop_first(q)) != NULL) {
 		if (strcmp(curr->name, goal) == 0) {
+			free(q);
 			return reconstruct_path(hash, curr);
 		}
 
@@ -181,10 +190,17 @@ struct LinkedList *id_search(struct Hashtable *hash, char *start, char *goal, st
 		prepend_to_list(stack, nstart);
 		nstart->checked = true;
 
+		bool end = true;
 		struct GNode *curr;
 		while (curr = pop_first(stack)) {
-			if (strcmp(curr->name, goal) == 0) return reconstruct_path(hash, curr);
-			else if (curr->layer+1 > max_layer) break;
+			if (strcmp(curr->name, goal) == 0) {
+				free(stack);
+				return reconstruct_path(hash, curr);
+			}
+			else if (curr->layer+1 > max_layer) {
+				end = false;
+				continue;
+			}
 
 			for (struct LinkedNode *nd = curr->connections; nd != NULL; nd = nd->next) {
 				struct GNode *gnd = hash_getv(hash, nd->value);
@@ -198,10 +214,12 @@ struct LinkedList *id_search(struct Hashtable *hash, char *start, char *goal, st
 			}
 		}
 
-		if (stack->length == 0) return NULL;
+		free(stack);
+
+		if (end) return NULL;
+
 		reset_graph(graph);
 		++max_layer;
-		free(stack);
 	}
 }
 
